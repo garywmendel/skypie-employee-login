@@ -1,0 +1,642 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyPie — Employee Sign In (Harri)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#080F1C;
+  --hull:#0E1A2E;
+  --surface:#16243C;
+  --surface-2:#1D2E4A;
+  --line:rgba(255,255,255,.10);
+  --line-strong:rgba(255,255,255,.20);
+  --fog:#8B9CBB;
+  --paper:#E9EEF6;
+  --amber:#F7B733;
+  --amber-deep:#C98A12;
+  --mint:#5FD3A6;
+  --rose:#F0748A;
+
+  --display:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 620px at 12% -10%, #17294a 0%, transparent 62%),
+    radial-gradient(760px 520px at 96% 8%, #1a2140 0%, transparent 58%),
+    var(--ink);
+  color:var(--paper);
+  font-family:var(--body);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ---------- brand marks ---------- */
+.mk{width:27px;height:26.6px;flex:none;color:var(--paper)}
+.mk.sm{width:17px;height:16.7px}
+.lock{height:27px;width:113px;color:var(--paper);flex:none}
+.lock.lg{height:34px;width:142px}
+
+/* ---------- page chrome ---------- */
+.masthead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:26px 30px 0}
+.masthead .sep{color:var(--line-strong)}
+.masthead .kicker{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);
+}
+
+.stage{
+  display:grid;
+  grid-template-columns:206px minmax(0,390px) minmax(280px,1fr);
+  gap:34px;align-items:start;
+  padding:26px 30px 70px;max-width:1260px;
+}
+
+/* ---------- state rail ---------- */
+.rail{position:sticky;top:26px}
+.rail h2{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--line-strong);margin:0 0 8px 2px;font-weight:400;
+}
+.rail h2:not(:first-child){margin-top:18px}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rail button{
+  width:100%;display:flex;align-items:center;gap:10px;
+  background:none;border:0;border-radius:9px;padding:8px 10px;cursor:pointer;text-align:left;
+  color:var(--fog);font-family:var(--body);font-size:13.5px;
+}
+.rail button .n{font-family:var(--mono);font-size:10px;color:var(--line-strong);min-width:16px}
+.rail button:hover{background:rgba(255,255,255,.045);color:var(--paper)}
+.rail button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.rail button[aria-current="true"]{background:var(--surface);color:var(--paper);font-weight:600}
+.rail button[aria-current="true"] .n{color:var(--amber)}
+
+/* ---------- device ---------- */
+.device{
+  width:390px;max-width:100%;border-radius:38px;background:var(--hull);
+  border:1px solid var(--line);
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;position:relative;
+}
+.statusbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 26px 4px;font-family:var(--mono);font-size:11px;color:var(--fog);
+}
+.statusbar .dots{display:flex;gap:4px}
+.statusbar .dots i{width:5px;height:5px;border-radius:50%;background:var(--line-strong)}
+.statusbar .dots i:last-child{background:var(--mint)}
+
+.screen{display:none;padding:16px 26px 30px;min-height:620px;flex-direction:column}
+.screen.on{display:flex}
+
+/* ---------- type ---------- */
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow.quiet{color:var(--fog)}
+.eyebrow.warn{color:var(--rose)}
+.eyebrow.good{color:var(--mint)}
+h1{font-family:var(--display);font-weight:800;font-size:31px;line-height:1.06;letter-spacing:-.025em;margin:0 0 10px}
+.sub{font-size:14.5px;line-height:1.5;color:var(--fog);margin:0 0 24px}
+.sub strong{color:var(--paper);font-weight:500}
+.fine{font-size:12.5px;line-height:1.55;color:var(--fog)}
+
+.lockup{display:flex;align-items:center;margin:6px 0 30px}
+
+/* ---------- fields ---------- */
+label.fld{display:block;margin-bottom:16px}
+label.fld .cap{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fog);margin-bottom:7px;
+}
+input[type=text],input[type=email]{
+  width:100%;padding:14px 15px;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;color:var(--paper);font-family:var(--body);font-size:15.5px;
+}
+input::placeholder{color:#5C6E8C}
+input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(247,183,51,.16)}
+
+/* ---------- buttons ---------- */
+.btn{width:100%;padding:15px;border-radius:12px;border:0;cursor:pointer;font-family:var(--body);font-size:15px;font-weight:600}
+.btn.primary{background:var(--amber);color:#0B1526}
+.btn.primary:hover{background:#FFC64F}
+.btn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--paper)}
+.btn.ghost:hover{background:rgba(255,255,255,.05)}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.linkbtn{
+  background:none;border:0;padding:0;cursor:pointer;color:var(--paper);
+  font-family:var(--body);font-size:13px;text-decoration:underline;
+  text-underline-offset:3px;text-decoration-color:var(--line-strong);
+}
+.linkbtn:hover{text-decoration-color:var(--amber)}
+.linkbtn:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:3px}
+.linkbtn[disabled]{color:var(--fog);text-decoration:none;cursor:default}
+
+.or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--fog)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.or span{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+
+.spacer{flex:1;min-height:20px}
+.footnote{border-top:1px solid var(--line);padding-top:16px;margin-top:22px}
+
+/* ---------- signature: source-of-truth chip ---------- */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fog);border:1px solid var(--line);border-radius:5px;padding:2px 6px;white-space:nowrap;
+}
+.chip i{width:5px;height:5px;border-radius:50%;background:var(--mint);flex:none}
+.chip.rose i{background:var(--rose)}
+.chip.amber i{background:var(--amber)}
+.chip.flat{border-color:transparent;background:var(--surface-2);color:var(--fog)}
+
+/* ---------- synced record card ---------- */
+.record{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px;margin-bottom:14px}
+.record .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.record .row:last-child{border-bottom:0}
+.record .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--fog)}
+.record .v{font-size:14.5px;font-weight:500;text-align:right}
+
+/* ---------- otp ---------- */
+.otp{display:flex;gap:8px;margin-bottom:20px}
+.otp input{
+  flex:1;min-width:0;aspect-ratio:1/1.15;text-align:center;padding:0;
+  font-family:var(--mono);font-size:22px;background:var(--surface);
+  border:1px solid var(--line);border-radius:11px;color:var(--paper);
+}
+.otp input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(247,183,51,.16)}
+
+/* ---------- pin dots ---------- */
+.pin{display:flex;gap:9px;margin-top:9px}
+.pin i{width:44px;height:50px;border-radius:11px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center}
+.pin i::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.pin i.set::after{background:var(--amber)}
+
+/* ---------- team picker ---------- */
+.team{
+  width:100%;text-align:left;display:flex;gap:13px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:15px;margin-bottom:10px;cursor:pointer;color:var(--paper);font-family:var(--body);
+}
+.team:hover{border-color:var(--line-strong)}
+.team:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.team[aria-pressed="true"]{border-color:var(--amber);background:var(--surface-2)}
+.team .badge{width:42px;height:42px;border-radius:11px;flex:none;display:grid;place-items:center;background:var(--surface-2);font-family:var(--display);font-weight:800;font-size:13px;color:var(--amber)}
+.team .name{font-size:14.5px;font-weight:600;margin-bottom:2px;display:block}
+.team .meta{font-size:12px;color:var(--fog);display:block}
+
+/* ---------- receipt ---------- */
+.receipt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px;margin:6px 0 18px}
+.receipt .line{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px dashed var(--line)}
+.receipt .line:last-child{border-bottom:0}
+.receipt .tag{font-family:var(--mono);font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;padding:3px 5px;border-radius:5px;flex:none;margin-top:2px;min-width:64px;text-align:center}
+.tag.expired{background:rgba(240,116,138,.14);color:var(--rose)}
+.tag.kept{background:rgba(95,211,166,.13);color:var(--mint)}
+.tag.review{background:rgba(247,183,51,.15);color:var(--amber)}
+.receipt .what{font-size:13.5px;line-height:1.45}
+.receipt .what small{display:block;color:var(--fog);font-size:12px;margin-top:2px}
+
+/* ---------- home ---------- */
+.hello{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.balance{background:linear-gradient(150deg,var(--amber),#E09A1A);border-radius:18px;padding:18px 20px;color:#0B1526;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end}
+.balance .n{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;letter-spacing:-.03em}
+.balance .l{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;opacity:.72;margin-top:6px}
+.balance .by{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;text-align:right;line-height:1.5}
+.pills{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.pills span{font-size:11.5px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);color:var(--fog);white-space:nowrap}
+.pills span.on{background:var(--surface-2);color:var(--paper);border-color:var(--line-strong)}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tile .t{font-size:14px;font-weight:500;line-height:1.35}
+.tile .d{font-size:12px;color:var(--fog);margin-top:4px}
+.nav{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-top:auto}
+.nav span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fog)}
+.nav span.act{color:var(--amber)}
+
+/* ---------- notes ---------- */
+.notes{position:sticky;top:26px}
+.notes .card{background:rgba(255,255,255,.028);border:1px solid var(--line);border-left:2px solid var(--amber);border-radius:4px 14px 14px 4px;padding:20px 22px}
+.notes h3{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-.02em;margin:0 0 3px}
+.notes .st{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--fog);margin-bottom:18px}
+.notes dl{margin:0}
+.notes dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin-bottom:5px}
+.notes dd{margin:0 0 16px;font-size:13.5px;line-height:1.55;color:#C3CEE0}
+.notes dd:last-child{margin-bottom:0}
+.notes dd b{color:var(--paper);font-weight:600}
+.notes ul{margin:0;padding-left:16px}
+.notes li{margin-bottom:5px}
+
+@media (max-width:1060px){
+  .stage{grid-template-columns:minmax(0,390px) minmax(260px,1fr);gap:26px}
+  .rail{grid-column:1/-1;position:static}
+  .rail h2{margin-top:12px}
+  .rail ol{flex-direction:row;flex-wrap:wrap;gap:6px}
+  .rail button{width:auto;border:1px solid var(--line)}
+  .notes{position:static}
+}
+@media (max-width:760px){
+  .stage{grid-template-columns:minmax(0,1fr);padding:20px 16px 60px}
+  .masthead{padding:20px 16px 0}
+  .device{width:100%}
+  .screen{padding:14px 20px 26px;min-height:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+<symbol id="sp-mark" viewBox="73.59 272.80 104.11 102.40" fill="currentColor" fill-rule="nonzero"><path d="M 174.808594 306.855469 C 174.203125 305.121094 172.195312 304.339844 170.601562 305.257812 L 140.9375 322.386719 C 131.363281 327.914062 119.398438 321.003906 119.398438 309.949219 L 119.398438 275.714844 C 119.398438 273.914062 117.769531 272.519531 116 272.851562 C 104.15625 275.070312 93.722656 281.292969 86.167969 290.070312 C 84.996094 291.4375 85.390625 293.542969 86.949219 294.445312 L 105.414062 305.101562 C 108.351562 306.800781 109.234375 310.542969 107.523438 313.476562 C 107.496094 313.519531 107.46875 313.566406 107.445312 313.613281 C 105.765625 316.539062 102.085938 317.613281 99.167969 315.925781 L 80.691406 305.257812 C 79.097656 304.339844 77.089844 305.121094 76.484375 306.855469 C 74.609375 312.222656 73.589844 317.992188 73.589844 324 C 73.589844 330.007812 74.609375 335.777344 76.484375 341.144531 C 77.089844 342.878906 79.101562 343.660156 80.691406 342.742188 L 99.167969 332.074219 C 102.085938 330.386719 105.765625 331.460938 107.445312 334.386719 C 107.46875 334.433594 107.496094 334.480469 107.523438 334.523438 C 109.234375 337.457031 108.351562 341.199219 105.414062 342.894531 L 86.949219 353.554688 C 85.390625 354.457031 84.996094 356.5625 86.167969 357.925781 C 93.722656 366.707031 104.15625 372.929688 116 375.148438 C 117.769531 375.480469 119.398438 374.085938 119.398438 372.285156 L 119.398438 350.988281 C 119.398438 347.601562 122.183594 344.960938 125.566406 344.972656 L 125.726562 344.972656 C 129.105469 344.960938 131.894531 347.601562 131.894531 350.988281 L 131.894531 372.285156 C 131.894531 374.085938 133.523438 375.480469 135.292969 375.148438 C 147.136719 372.929688 157.574219 366.707031 165.125 357.925781 C 166.296875 356.5625 165.90625 354.457031 164.34375 353.554688 L 145.882812 342.894531 C 142.941406 341.199219 142.058594 337.457031 143.769531 334.523438 C 143.796875 334.480469 143.824219 334.433594 143.847656 334.386719 C 145.527344 331.460938 149.207031 330.386719 152.128906 332.074219 L 170.601562 342.742188 C 172.195312 343.660156 174.203125 342.878906 174.808594 341.144531 C 176.683594 335.777344 177.703125 330.007812 177.703125 324 C 177.703125 317.992188 176.683594 312.222656 174.808594 306.855469"/><path d="M 136.625 310.445312 L 164.34375 294.445312 C 165.910156 293.539062 166.289062 291.425781 165.109375 290.054688 C 157.566406 281.292969 147.144531 275.078125 135.316406 272.855469 C 133.539062 272.519531 131.894531 273.90625 131.894531 275.714844 L 131.894531 307.714844 C 131.894531 310.140625 134.523438 311.660156 136.625 310.445312"/></symbol>
+<symbol id="sp-lockup" viewBox="73.59 272.80 428.82 102.40" fill="currentColor" fill-rule="nonzero"><path d="M 174.808594 306.855469 C 174.203125 305.121094 172.195312 304.339844 170.601562 305.257812 L 140.9375 322.386719 C 131.363281 327.914062 119.398438 321.003906 119.398438 309.949219 L 119.398438 275.714844 C 119.398438 273.914062 117.769531 272.519531 116 272.851562 C 104.15625 275.070312 93.722656 281.292969 86.167969 290.070312 C 84.996094 291.4375 85.390625 293.542969 86.949219 294.445312 L 105.414062 305.101562 C 108.351562 306.800781 109.234375 310.542969 107.523438 313.476562 C 107.496094 313.519531 107.46875 313.566406 107.445312 313.613281 C 105.765625 316.539062 102.085938 317.613281 99.167969 315.925781 L 80.691406 305.257812 C 79.097656 304.339844 77.089844 305.121094 76.484375 306.855469 C 74.609375 312.222656 73.589844 317.992188 73.589844 324 C 73.589844 330.007812 74.609375 335.777344 76.484375 341.144531 C 77.089844 342.878906 79.101562 343.660156 80.691406 342.742188 L 99.167969 332.074219 C 102.085938 330.386719 105.765625 331.460938 107.445312 334.386719 C 107.46875 334.433594 107.496094 334.480469 107.523438 334.523438 C 109.234375 337.457031 108.351562 341.199219 105.414062 342.894531 L 86.949219 353.554688 C 85.390625 354.457031 84.996094 356.5625 86.167969 357.925781 C 93.722656 366.707031 104.15625 372.929688 116 375.148438 C 117.769531 375.480469 119.398438 374.085938 119.398438 372.285156 L 119.398438 350.988281 C 119.398438 347.601562 122.183594 344.960938 125.566406 344.972656 L 125.726562 344.972656 C 129.105469 344.960938 131.894531 347.601562 131.894531 350.988281 L 131.894531 372.285156 C 131.894531 374.085938 133.523438 375.480469 135.292969 375.148438 C 147.136719 372.929688 157.574219 366.707031 165.125 357.925781 C 166.296875 356.5625 165.90625 354.457031 164.34375 353.554688 L 145.882812 342.894531 C 142.941406 341.199219 142.058594 337.457031 143.769531 334.523438 C 143.796875 334.480469 143.824219 334.433594 143.847656 334.386719 C 145.527344 331.460938 149.207031 330.386719 152.128906 332.074219 L 170.601562 342.742188 C 172.195312 343.660156 174.203125 342.878906 174.808594 341.144531 C 176.683594 335.777344 177.703125 330.007812 177.703125 324 C 177.703125 317.992188 176.683594 312.222656 174.808594 306.855469"/><path d="M 136.625 310.445312 L 164.34375 294.445312 C 165.910156 293.539062 166.289062 291.425781 165.109375 290.054688 C 157.566406 281.292969 147.144531 275.078125 135.316406 272.855469 C 133.539062 272.519531 131.894531 273.90625 131.894531 275.714844 L 131.894531 307.714844 C 131.894531 310.140625 134.523438 311.660156 136.625 310.445312"/><path d="M 296.148438 352.027344 L 277.453125 328.464844 L 277.453125 351.457031 C 277.453125 352.351562 276.726562 353.078125 275.832031 353.078125 L 265.519531 353.078125 C 264.625 353.078125 263.898438 352.351562 263.898438 351.457031 L 263.898438 287.105469 C 263.898438 286.207031 264.625 285.480469 265.519531 285.480469 L 275.832031 285.480469 C 276.726562 285.480469 277.453125 286.207031 277.453125 287.105469 L 277.453125 325.078125 L 295.167969 303.105469 C 295.695312 302.449219 296.492188 302.070312 297.332031 302.070312 L 312.5 302.070312 L 291.277344 326.59375 L 313.570312 353.078125 L 298.328125 353.078125 C 297.476562 353.078125 296.675781 352.691406 296.148438 352.027344"/><path d="M 333.320312 352.8125 L 312.183594 302.070312 L 325.863281 302.070312 C 326.539062 302.070312 327.144531 302.488281 327.382812 303.121094 L 340.542969 338.277344 L 353.617188 303.125 C 353.851562 302.492188 354.457031 302.070312 355.136719 302.070312 L 368.902344 302.070312 L 341.402344 368.574219 C 341.152344 369.179688 340.5625 369.578125 339.90625 369.578125 L 326.097656 369.578125 Z M 333.320312 352.8125"/><path d="M 394.039062 323.652344 C 404.027344 323.652344 408.398438 320.441406 408.398438 312.148438 C 408.398438 303.941406 404.027344 300.730469 394.039062 300.730469 L 386.996094 300.730469 L 386.996094 323.652344 Z M 372.90625 290.136719 C 372.90625 289.242188 373.632812 288.515625 374.527344 288.515625 L 391.542969 288.515625 C 414.105469 288.515625 422.753906 295.46875 422.753906 312.414062 C 422.753906 329.269531 414.105469 336.046875 391.898438 336.046875 L 386.996094 336.046875 L 386.996094 351.457031 C 386.996094 352.351562 386.269531 353.078125 385.371094 353.078125 L 374.527344 353.078125 C 373.632812 353.078125 372.90625 352.351562 372.90625 351.457031 Z M 372.90625 290.136719"/><path d="M 431.730469 302.070312 L 441.953125 302.070312 C 442.847656 302.070312 443.574219 302.796875 443.574219 303.691406 L 443.574219 351.457031 C 443.574219 352.351562 442.847656 353.078125 441.953125 353.078125 L 431.730469 353.078125 C 430.835938 353.078125 430.109375 352.351562 430.109375 351.457031 L 430.109375 303.691406 C 430.109375 302.796875 430.835938 302.070312 431.730469 302.070312"/><path d="M 444.644531 288.605469 C 444.644531 292.890625 441.171875 296.363281 436.886719 296.363281 C 432.601562 296.363281 429.128906 292.890625 429.128906 288.605469 C 429.128906 284.320312 432.601562 280.847656 436.886719 280.847656 C 441.171875 280.847656 444.644531 284.320312 444.644531 288.605469"/><path d="M 464.785156 321.777344 C 465.589844 314.554688 470.492188 310.628906 477.449219 310.628906 C 484.671875 310.628906 489.3125 315 489.84375 321.777344 Z M 477.097656 301.089844 C 461.667969 301.089844 450.964844 311.878906 450.964844 327.574219 C 450.964844 343.535156 461.488281 354.058594 477.535156 354.058594 C 494.859375 354.058594 500.996094 343.285156 502.253906 337.46875 L 490.371094 337.46875 C 489.777344 337.46875 489.257812 337.816406 488.96875 338.335938 C 486.96875 341.964844 483.285156 343.800781 477.898438 343.800781 C 469.785156 343.800781 464.78125 338.992188 464.515625 330.699219 L 502.238281 330.699219 C 503.851562 312.859375 493.945312 301.089844 477.097656 301.089844"/><path d="M 203.570312 333.824219 L 216.183594 333.824219 C 216.855469 333.824219 217.4375 334.246094 217.699219 334.867188 C 219.878906 339.984375 224.597656 342.734375 231.132812 342.734375 C 238.082031 342.734375 242.273438 339.878906 242.1875 335.070312 C 242.007812 322.402344 206.160156 330.699219 206.160156 306.441406 C 206.160156 295.117188 215.789062 287.539062 229.617188 287.539062 C 241.945312 287.539062 250.75 292.175781 254.371094 301.136719 L 254.382812 301.136719 C 255.339844 303.425781 255.773438 305.628906 255.773438 306.792969 L 243.664062 306.792969 C 243.039062 306.792969 242.492188 306.414062 242.226562 305.851562 C 241.214844 303.722656 239.808594 302.074219 237.984375 300.929688 C 235.902344 299.613281 233.261719 298.945312 230.054688 298.945312 C 223.730469 298.945312 219.894531 301.71875 219.894531 306.175781 C 219.894531 319.90625 256.367188 310.097656 256.367188 334.621094 C 256.367188 346.296875 246.457031 353.972656 231.214844 353.972656 C 209.824219 353.972656 204.15625 339.96875 203.570312 333.824219"/></symbol>
+</svg>
+
+<header class="masthead">
+  <svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg>
+  <span class="sep">/</span>
+  <div class="kicker">Employee sign in &middot; Harri-synced roster &middot; v0.2</div>
+</header>
+
+<div class="stage">
+
+  <nav class="rail" aria-label="Screen states"><div id="rail"></div></nav>
+
+  <main class="device">
+    <div class="statusbar">
+      <span>4:52</span>
+      <span class="dots"><i></i><i></i><i></i><i></i></span>
+    </div>
+
+    <!-- 1 IDENTIFY -->
+    <section class="screen on" data-screen="identify">
+      <div class="lockup"><svg class="lock lg" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow">Employee access</p>
+      <h1>Sign in to your Slices.</h1>
+      <p class="sub">Use the work email or mobile number your employer has for you. That's how we match you to your team.</p>
+
+      <label class="fld">
+        <span class="cap">Work email or mobile</span>
+        <input type="text" placeholder="marisol@hillcountry.com" autocomplete="username">
+      </label>
+
+      <button class="btn primary" data-go="verify">Send my code</button>
+      <div class="or"><span>or</span></div>
+      <button class="btn ghost" data-go="activate">Continue with Harri</button>
+
+      <div class="spacer"></div>
+      <div class="footnote">
+        <p class="fine">Not on a team yet? Your manager adds you in Harri and your invite lands here automatically.</p>
+      </div>
+    </section>
+
+    <!-- 2 VERIFY -->
+    <section class="screen" data-screen="verify">
+      <button class="linkbtn" data-go="identify" style="margin-bottom:26px">&larr; Back</button>
+      <p class="eyebrow quiet">Step 2 of 2</p>
+      <h1>Enter your code.</h1>
+      <p class="sub">We sent six digits to <strong>m&bull;&bull;&bull;&bull;&bull;a@hillcountry.com</strong>. It works for 10 minutes.</p>
+
+      <div class="otp" id="otp">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 1" value="4">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 2" value="1">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 3" value="9">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 4" value="">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 5" value="">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 6" value="">
+      </div>
+
+      <button class="btn primary" data-go="activate">Verify and continue</button>
+
+      <div class="spacer"></div>
+      <div class="footnote" style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+        <button class="linkbtn" id="resend" disabled>Resend in 0:38</button>
+        <button class="linkbtn" data-go="identify">Use a different address</button>
+      </div>
+    </section>
+
+    <!-- 3 ACTIVATE -->
+    <section class="screen" data-screen="activate">
+      <p class="eyebrow">First time here</p>
+      <h1>Confirm it's you.</h1>
+      <p class="sub">Your employer already set this up. Check the details below before you activate.</p>
+
+      <div class="record">
+        <div class="row"><span class="k">Name</span><span class="v">Marisol Ayala</span></div>
+        <div class="row"><span class="k">Role</span><span class="v">Server</span></div>
+        <div class="row"><span class="k">Employer</span><span class="v">Hill Country Hospitality</span></div>
+        <div class="row"><span class="k">Team</span><span class="v">Hill Country BBQ<br><span style="color:var(--fog);font-size:12px">30 W 26th St</span></span></div>
+        <div class="row"><span class="k">Start date</span><span class="v">14 Aug 2026</span></div>
+      </div>
+      <p class="fine" style="display:flex;align-items:center;gap:8px;margin-bottom:22px">
+        <span class="chip"><i></i>Synced &middot; Harri</span> Ask your manager to change these.
+      </p>
+
+      <label class="fld">
+        <span class="cap">Name guests see <span class="chip amber"><i></i>Yours to set</span></span>
+        <input type="text" value="Mari">
+      </label>
+
+      <label class="fld" style="margin-bottom:24px">
+        <span class="cap">Quick code for reopening the app</span>
+        <span class="pin"><i class="set"></i><i class="set"></i><i class="set"></i><i></i></span>
+      </label>
+
+      <button class="btn primary" data-go="team">Activate my account</button>
+      <p class="fine" style="margin-top:14px;text-align:center">By activating you accept the SkyPie terms and privacy policy.</p>
+    </section>
+
+    <!-- 4 TEAM -->
+    <section class="screen" data-screen="team">
+      <p class="eyebrow quiet">Two teams found</p>
+      <h1>Where are you working?</h1>
+      <p class="sub">Harri has you on more than one team. Slices follow the team you pick, and you can switch anytime.</p>
+
+      <button class="team" aria-pressed="true">
+        <span class="badge">HC</span>
+        <span><span class="name">Hill Country BBQ</span><span class="meta">30 W 26th St &middot; Server &middot; 6 Slices live</span></span>
+      </button>
+      <button class="team" aria-pressed="false">
+        <span class="badge">HK</span>
+        <span><span class="name">Hill Country Chicken</span><span class="meta">Flatiron &middot; Server &middot; 3 Slices live</span></span>
+      </button>
+
+      <div class="spacer"></div>
+      <button class="btn primary" data-go="home">Continue</button>
+    </section>
+
+    <!-- 5 HOME -->
+    <section class="screen" data-screen="home">
+      <div class="hello">
+        <div>
+          <h1 style="font-size:26px;margin-bottom:7px">Evening, Mari.</h1>
+          <span class="chip"><i></i>Hill Country BBQ &middot; Server</span>
+        </div>
+        <svg class="mk" aria-label="SkyPie" style="color:var(--fog)"><use href="#sp-mark"/></svg>
+      </div>
+
+      <div class="balance">
+        <div><div class="n">6</div><div class="l">Slices ready</div></div>
+        <div class="by">Set by<br>Hill Country<br>Hospitality</div>
+      </div>
+
+      <div class="pills"><span class="on">All</span><span>Food &amp; drink</span><span>Nights out</span><span>Stays</span><span>Travel</span></div>
+
+      <div class="tile">
+        <div><div class="t">Shift meal &middot; Moist brisket plate</div><div class="d">Hill Country BBQ &middot; use before 11 PM</div></div>
+        <span class="chip amber"><i></i>Tonight</span>
+      </div>
+      <div class="tile">
+        <div><div class="t">Two seats &middot; Thursday's show</div><div class="d">Live music downstairs &middot; 9 PM</div></div>
+        <span class="chip flat">Nights out</span>
+      </div>
+      <div class="tile">
+        <div><div class="t">$40 tab &middot; Hill Country Chicken</div><div class="d">Sister venue &middot; any Monday</div></div>
+        <span class="chip flat">Group</span>
+      </div>
+      <div class="tile">
+        <div><div class="t">One night &middot; The Marlowe, Austin</div><div class="d">Partner on SkyPie &middot; book 14 days out</div></div>
+        <span class="chip flat">Network</span>
+      </div>
+      <div class="tile">
+        <div><div class="t">Next shift &middot; Thu 4:00 PM</div><div class="d">Double station</div></div>
+        <span class="chip"><i></i>Harri</span>
+      </div>
+
+      <div class="nav"><span class="act">My Slices</span><span>My Listings</span><span>Marketplace</span></div>
+    </section>
+
+    <!-- 6 CONTACT CHANGED -->
+    <section class="screen" data-screen="contact">
+      <div class="lockup"><svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow">Details changed</p>
+      <h1>Your contact details changed.</h1>
+      <p class="sub">Hill Country updated your email in Harri. Sign-in codes now go to the new address.</p>
+
+      <div class="record">
+        <div class="row"><span class="k">Was</span><span class="v" style="color:var(--fog);text-decoration:line-through">m.ayala@hillcountry.com</span></div>
+        <div class="row"><span class="k">Now</span><span class="v">marisol@hillcountry.com</span></div>
+        <div class="row"><span class="k">Changed</span><span class="v">Today, 4:48 PM</span></div>
+        <div class="row"><span class="k">Your Slices</span><span class="v">6 &middot; untouched</span></div>
+      </div>
+      <p class="fine" style="display:flex;align-items:center;gap:8px;margin-bottom:22px">
+        <span class="chip"><i></i>Synced &middot; Harri</span> Changed by your manager.
+      </p>
+
+      <button class="btn primary" data-go="verify">Send a code to the new address</button>
+      <div class="spacer"></div>
+      <div class="footnote">
+        <p class="fine">Don't recognise this address? Don't sign in — ask your manager to check Harri first.</p>
+      </div>
+    </section>
+
+    <!-- 7 REACTIVATED -->
+    <section class="screen" data-screen="back">
+      <div class="lockup"><svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow good">Back on the team</p>
+      <h1>Welcome back, Mari.</h1>
+      <p class="sub">Hill Country added you back in Harri on <strong>19 Aug, 9:14 AM</strong>. Your account reopened on its own — same sign-in, same history.</p>
+
+      <div class="receipt">
+        <div class="line"><span class="tag kept">Restored</span><span class="what">Hill Country BBQ &middot; Server<small>Your team, role and Slices are live again.</small></span></div>
+        <div class="line"><span class="tag kept">Restored</span><span class="what">3 employee Slices<small>You came back inside the 24-hour window, so these came back with you.</small></span></div>
+        <div class="line"><span class="tag kept">Kept</span><span class="what">11 Slices you redeemed<small>Never left your history.</small></span></div>
+        <div class="line"><span class="tag expired">Gone</span><span class="what">1 Slice that hit its own end date<small>It expired on its own terms, not because you left.</small></span></div>
+      </div>
+
+      <p class="fine" style="margin-bottom:20px">Come back after the 24-hour window and expired Slices stay expired. Your employer issues fresh ones instead.</p>
+      <button class="btn primary" data-go="home">Go to my Slices</button>
+    </section>
+
+    <!-- 8 ENDED -->
+    <section class="screen" data-screen="ended">
+      <div class="lockup"><svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow warn">Employee access ended</p>
+      <h1>Your employee Slices are closed.</h1>
+      <p class="sub">Hill Country removed you from the team in Harri on <strong>12 Aug 2026, 6:02 PM</strong>. Your unused employee Slices closed at the same moment.</p>
+
+      <div class="receipt">
+        <div class="line"><span class="tag expired">Expired</span><span class="what">6 unused employee Slices<small>Including the Austin hotel night and Thursday's seats. They no longer scan.</small></span></div>
+        <div class="line"><span class="tag kept">Kept</span><span class="what">11 Slices you already redeemed<small>They stay in your history.</small></span></div>
+        <div class="line"><span class="tag kept">Kept</span><span class="what">24 Slices you sent to guests<small>Still valid for the people who hold them.</small></span></div>
+      </div>
+
+      <p class="fine" style="margin-bottom:20px">If this is wrong, ask your manager to add you back in Harri. Your account reopens on its own — you won't need to sign up again.</p>
+      <button class="btn ghost" data-go="back">View my history</button>
+    </section>
+
+    <!-- 9 MANAGER DEPARTURE -->
+    <section class="screen" data-screen="manager">
+      <div class="lockup"><svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow warn">Manager access ended</p>
+      <h1>Your manager access is closed.</h1>
+      <p class="sub">Hill Country removed you from the team in Harri on <strong>12 Aug 2026, 6:02 PM</strong>. Slices you issued are handled differently from Slices you held.</p>
+
+      <div class="receipt">
+        <div class="line"><span class="tag expired">Expired</span><span class="what">9 unused employee Slices<small>Yours to use. Closed at the same moment.</small></span></div>
+        <div class="line"><span class="tag review">In review</span><span class="what">18 Slices you issued in your last 14 days<small>Hill Country is checking these. Guests keep them unless the operator pulls one.</small></span></div>
+        <div class="line"><span class="tag kept">Kept</span><span class="what">194 Slices you issued before that<small>Guests keep them. Nothing changes.</small></span></div>
+        <div class="line"><span class="tag kept">Kept</span><span class="what">41 Slices you redeemed yourself<small>They stay in your history.</small></span></div>
+      </div>
+
+      <p class="fine">A manager can issue high-value Slices, so the last two weeks get a look. A team member's guest Slices are never reviewed this way.</p>
+    </section>
+
+    <!-- 10 NO MATCH -->
+    <section class="screen" data-screen="nomatch">
+      <button class="linkbtn" data-go="identify" style="margin-bottom:26px">&larr; Back</button>
+      <p class="eyebrow warn">No team found</p>
+      <h1>We can't match you to a team.</h1>
+      <p class="sub"><strong>marisol.ayala@gmail.com</strong> isn't the address your employer has on file. Try the one printed on your schedule or your pay stub.</p>
+
+      <div class="record">
+        <div class="row"><span class="k">Checked</span><span class="v">Every employer on SkyPie</span></div>
+        <div class="row"><span class="k">Last roster sync</span><span class="v">2 minutes ago</span></div>
+      </div>
+
+      <button class="btn primary" data-go="identify">Try another address</button>
+      <div class="spacer"></div>
+      <div class="footnote">
+        <p class="fine">Started this week? Your manager may not have added you in Harri yet. Ask them to check, then try again.</p>
+      </div>
+    </section>
+
+    <!-- 11 PAUSED -->
+    <section class="screen" data-screen="paused">
+      <div class="lockup"><svg class="lock" aria-label="SkyPie"><use href="#sp-lockup"/></svg></div>
+      <p class="eyebrow warn">Sign-in paused</p>
+      <h1>Too many codes.</h1>
+      <p class="sub">We paused sign-in for 15 minutes to keep your Slices safe. Nothing on your account changed.</p>
+
+      <div class="record">
+        <div class="row"><span class="k">Try again in</span><span class="v" style="font-family:var(--mono)">14:22</span></div>
+        <div class="row"><span class="k">Slices held</span><span class="v">6 &middot; untouched</span></div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="footnote">
+        <p class="fine">Working a shift and need a Slice now? A manager can redeem it for you from the SkyPie dashboard.</p>
+      </div>
+    </section>
+  </main>
+
+  <aside class="notes">
+    <div class="card">
+      <h3 id="nTitle"></h3>
+      <div class="st" id="nState"></div>
+      <dl>
+        <dt>What triggers it</dt><dd id="nTrig"></dd>
+        <dt>Who owns the data</dt><dd id="nOwn"></dd>
+        <dt>Worth deciding</dt><dd id="nEdge"></dd>
+      </dl>
+    </div>
+  </aside>
+</div>
+
+<script>
+const GROUPS=[
+ {label:"Getting in",items:[
+  {id:"identify",label:"Identify",
+   trig:"Employee opens the app, or taps the invite SkyPie sent when Harri reported a new hire.",
+   own:"Nothing yet. The address typed here is matched against the <b>Harri roster</b>, never against a SkyPie-only signup.",
+   edge:"<ul><li>Passwordless by default — turnover is high and shared devices are common.</li><li>“Continue with Harri” only appears if the employer enabled SSO.</li><li>Match on email <i>or</i> mobile, since back-of-house staff often have no work email.</li><li>One address may sit on more than one employer once SkyPie is live across many Harri customers.</li></ul>"},
+
+  {id:"verify",label:"Verify code",
+   trig:"A roster match was found. The code goes to the contact method Harri holds — not one the employee types in.",
+   own:"<b>Harri</b> owns the email and phone. If a manager changed it this morning, the code follows it within seconds.",
+   edge:"<ul><li>Contact changed mid-sign-in: cancel the outstanding code and reissue to the new address.</li><li>A departure arriving while a code is live must invalidate that code.</li></ul>"},
+
+  {id:"activate",label:"Activate",
+   trig:"First successful sign-in after Harri created the employee record.",
+   own:"Name, role, employer, team and start date are <b>read-only, synced from Harri</b>. Only the guest-facing display name and quick code belong to the employee.",
+   edge:"<ul><li>The synced chip is the signature of the whole integration — every field says who owns it, so nobody asks “was this updated in both systems?”</li><li>Employer sits above team, because a Harri customer may run many venues.</li><li>Quick code is convenience re-entry, not the credential.</li></ul>"},
+
+  {id:"team",label:"Choose team",
+   trig:"Harri reports membership in more than one location for the same person.",
+   own:"<b>Harri</b> owns which teams exist and who belongs to them. SkyPie owns which one is active.",
+   edge:"<ul><li>Slice eligibility is per team, so the active team decides what is redeemable right now.</li><li>Removed from one team but not the other: expire only that team's unused Slices.</li><li>Two employers, not two venues, is the harder case — worth deciding whether that's one account or two.</li></ul>"}]},
+
+ {label:"In the app",items:[
+  {id:"home",label:"Signed in",
+   trig:"Activation complete, or a returning employee whose status is still active.",
+   own:"The Slice catalog is <b>employer-defined</b> in SkyPie. The shift card is read from <b>Harri</b> scheduling — small proof the two systems are talking.",
+   edge:"<ul><li>Slices draw on three supplies: the employer's own venue, sister venues in the group, and other SkyPie operators. Same Slice object, different issuer.</li><li>Network Slices need redemption terms the employee can see up front — lead time, blackout dates, who pays.</li><li>Re-check active status on every app open, not just at sign-in.</li><li>Tabs now match the live app (My Slices / My Listings / Marketplace). Where gifting lives is still open — it may belong inside a Slice rather than in the bar.</li></ul>"}]},
+
+ {label:"Roster changes",items:[
+  {id:"contact",label:"Contact updated",
+   trig:"Harri pushes a new email or phone while the employee is signed in, or between sessions.",
+   own:"<b>Harri</b>. SkyPie never lets the employee edit the address that authenticates them.",
+   edge:"<ul><li>The contact <i>is</i> the credential, so a change should force one fresh verification — otherwise a mistyped address in Harri quietly hands the account to someone else.</li><li>Show the old value struck through. If it's a mistake, the employee is the one who spots it.</li><li>Say plainly that Slices didn't move. That's the first thing they'll fear.</li></ul>"},
+
+  {id:"back",label:"Reactivated",
+   trig:"Someone removed in Harri is added back — a seasonal return, or a manager who removed the wrong person.",
+   own:"<b>Harri</b> triggers it. SkyPie decides what comes back.",
+   edge:"<ul><li>The grace window is the real decision. Mistaken removals are common, and permanent expiry makes the operator re-issue by hand. 24 hours is a starting proposal, not a settled number — make it employer-configurable.</li><li>Distinguish Slices that expired <i>because they left</i> from Slices that hit their own end date. Only the first kind is restorable.</li><li>No re-signup, ever. The account reopens on the same identity.</li></ul>"}]},
+
+ {label:"Access ended",items:[
+  {id:"ended",label:"Access ended",
+   trig:"Harri reported a departing employee, or an admin removed them in SkyPie. Unused employee Slices expire the same moment.",
+   own:"<b>Harri</b> is the trigger. SkyPie decides what expires and what survives.",
+   edge:"<ul><li>This is the safety rule made visible: the receipt names what closed and what was kept, so there's no dispute later.</li><li>Naming the specific Slices that died — a hotel night, a pair of seats — matters more as the catalog widens beyond a shift meal.</li><li>High-value network Slices may already be booked with a third party. Expiry has to reach the partner's system, not just SkyPie.</li></ul>"},
+
+  {id:"manager",label:"Manager departure",
+   trig:"A departing employee who held issuing rights. The exception to “guest Slices never expire”.",
+   own:"<b>Harri</b> reports the departure and the role. <b>The operator</b> decides what happens to Slices under review.",
+   edge:"<ul><li>The 14-day look-back is a proposal. It should be employer-set, and probably value-weighted rather than purely time-based.</li><li>The review itself belongs in the SkyPie Dashboard, not here — this screen only tells the departing manager it's happening.</li><li>Guests holding a pulled Slice need their own message. That's an unbuilt screen and the sharpest open edge in the flow.</li></ul>"}]},
+
+ {label:"Blocked",items:[
+  {id:"nomatch",label:"No team found",
+   trig:"The address has no match on any employer's roster.",
+   own:"<b>Harri</b>. SkyPie deliberately offers no self-signup — an employee account can only come from a roster.",
+   edge:"<ul><li>Showing the last sync time answers “is it just slow?” before anyone opens a ticket.</li><li>Never confirm whether the address exists under another employer.</li></ul>"},
+
+  {id:"paused",label:"Sign-in paused",
+   trig:"Too many code requests or failed attempts from one identity.",
+   own:"SkyPie.",
+   edge:"<ul><li>Say plainly that nothing changed — a locked-out server mid-shift assumes the worst.</li><li>The manager-redeems fallback keeps service moving instead of stalling it.</li></ul>"}]}
+];
+
+const SCREENS=GROUPS.flatMap(g=>g.items);
+const railEl=document.getElementById("rail");
+let n=0;
+GROUPS.forEach(g=>{
+  const h=document.createElement("h2");h.textContent=g.label;railEl.appendChild(h);
+  const ol=document.createElement("ol");
+  g.items.forEach(s=>{
+    n++;const li=document.createElement("li"),b=document.createElement("button");
+    b.innerHTML='<span class="n">'+String(n).padStart(2,"0")+'</span>'+s.label;
+    b.dataset.sid=s.id;b.onclick=()=>show(s.id);
+    li.appendChild(b);ol.appendChild(li);
+  });
+  railEl.appendChild(ol);
+});
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(el=>el.classList.toggle("on",el.dataset.screen===id));
+  const i=SCREENS.findIndex(s=>s.id===id),s=SCREENS[i];
+  railEl.querySelectorAll("button").forEach(b=>b.setAttribute("aria-current",b.dataset.sid===id?"true":"false"));
+  nTitle.textContent=s.label;
+  nState.textContent="Screen "+String(i+1).padStart(2,"0")+" of "+SCREENS.length;
+  nTrig.innerHTML=s.trig;nOwn.innerHTML=s.own;nEdge.innerHTML=s.edge;
+}
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
+
+const otp=[...document.querySelectorAll("#otp input")];
+otp.forEach((inp,i)=>{
+  inp.oninput=()=>{inp.value=inp.value.replace(/\D/g,"");if(inp.value&&otp[i+1])otp[i+1].focus()};
+  inp.onkeydown=e=>{if(e.key==="Backspace"&&!inp.value&&otp[i-1])otp[i-1].focus()};
+});
+
+let t=38;const rs=document.getElementById("resend");
+setInterval(()=>{
+  if(t>0){t--;rs.textContent="Resend in 0:"+String(t).padStart(2,"0")}
+  else{rs.disabled=false;rs.textContent="Resend code"}
+},1000);
+
+document.querySelectorAll(".team").forEach(x=>x.onclick=()=>{
+  document.querySelectorAll(".team").forEach(o=>o.setAttribute("aria-pressed","false"));
+  x.setAttribute("aria-pressed","true");
+});
+
+show("identify");
+</script>
